@@ -86,8 +86,10 @@ const fetchAllBooks = async function(req, res) {
         } = queryParams
 
         //Validation for invalid userId in params
-        if (!validator.validatingInvalidObjectId(userId)) {
-            return res.status(400).send({ status: false, message: "Invalid userId in params." })
+        if (userId) {
+            if (!(userId.length == 24)) {
+                return res.status(400).send({ status: false, message: "Invalid userId in params." })
+            }
         }
 
         //Combinations of query params.
@@ -117,20 +119,33 @@ const fetchAllBooks = async function(req, res) {
             }
 
             //Searching books according to the request 
-            let books = await bookModel.find(obj).select({ subcategory: 0, ISBN: 0, isDeleted: 0, updatedAt: 0, createdAt: 0, __v: 0 }).sort({
-                title: 1
-            });
+            const books = await bookModel.find(obj).select({
+                    subcategory: 0,
+                    ISBN: 0,
+                    isDeleted: 0,
+                    updatedAt: 0,
+                    createdAt: 0,
+                    __v: 0
+                })
+                .sort({
+                    title: 1
+                });
             const countBooks = books.length
 
             //If no found by the specific combinations revert error msg ~-> No books found.
             if (books == false) {
                 return res.status(404).send({ status: false, message: "No books found" });
             } else {
-                res.status(200).send({ status: true, message: `${countBooks} books found.`, data: books })
+                res.status(200).send({
+                    status: true,
+                    message: `${countBooks} books found.`,
+                    data: books
+                })
             }
         } else {
             return res.status(400).send({ status: false, message: "No filters applied." });
         }
+
     } catch (err) {
         return res.status(500).send({ status: false, message: "Something went wrong", Error: err.message })
     }

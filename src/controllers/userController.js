@@ -107,24 +107,21 @@ const loginUser = async function(req, res) {
         //validation ends.
 
         //searching credentials of user in DB to cross verify.
-        const findEmail = await userModel.findOne({
-            email
+        const findCredentials = await userModel.findOne({
+            email,
+            password
         })
-        if (!findEmail) {
-            return res.status(401).send({ status: false, message: `Invalid login credentials. Please check the Email id.` });
-        }
-        const findPassword = await userModel.findOne({ password })
-        if (!findPassword) {
-            return res.status(401).send({ status: false, message: `Invalid login credentials. Please check the password.` });
+        if (!findCredentials) {
+            return res.status(401).send({ status: false, message: `Invalid login credentials. Email id or password is incorrect.` });
         }
 
-        const id = findEmail._id //saving userId by sarching the email & password of the specified user.
+        const id = findCredentials._id //saving userId by sarching the email & password of the specified user.
 
         //Generating token by the userId
         const token = await jwt.sign({
-            userId: findEmail._id,
+            userId: id,
             iat: Math.floor(Date.now() / 1000), //time of issuing the token.
-            exp: Math.floor(Date.now() / 1000) + 60 * 30 //setting token expiry time limit.
+            exp: Math.floor(Date.now() / 1000) + 60 * 120 //setting token expiry time limit.
         }, 'group7')
 
         //setting token in response header.

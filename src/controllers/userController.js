@@ -1,10 +1,10 @@
 const userModel = require('../models/userModel')
 const jwt = require('jsonwebtoken')
 const validator = require('../validators/validator')
-
+const secretKey = 'Joy_Bhattacharya-Project4_Book_management'
 
 //Registering users
-const userCreation = async function(req, res) {
+const userCreation = async function (req, res) {
     try {
         const requestBody = req.body;
         const { //Object destructuring
@@ -40,8 +40,18 @@ const userCreation = async function(req, res) {
             return res.status(400).send({ status: false, message: "password is required" })
         }
 
-        if (address) { //checking if the address key is present in the request body then it must have the following keys with their values, If not then address won't get stored in DB.
+        if(!validator.validString(address)){
+            return res.status(400).send({ status: false, message: "Address cannot be empty if key is mentioned." })
+        };
 
+       
+
+        //checking if the address key is present in the request body then it must have the following keys with their values, If not then address won't get stored in DB.
+        if (address) { 
+            
+            if(typeof(address) != 'object'){
+                return res.status(400).send({ status: false, message: "address must be in object." })
+            }
             if (!validator.validString(address.street)) {
                 return res.status(400).send({ status: false, message: "Street address cannot be empty." })
             }
@@ -89,7 +99,7 @@ const userCreation = async function(req, res) {
 }
 
 //User login.
-const loginUser = async function(req, res) {
+const loginUser = async function (req, res) {
     try {
         const requestBody = req.body;
         const { email, password } = requestBody //object destructuring
@@ -121,12 +131,12 @@ const loginUser = async function(req, res) {
         const token = await jwt.sign({
             userId: id,
             iat: Math.floor(Date.now() / 1000), //time of issuing the token.
-            exp: Math.floor(Date.now() / 1000) + 60 * 120 //setting token expiry time limit.
-        }, 'group7')
+            exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 //setting token expiry time limit.
+        }, secretKey)
 
         //setting token in response header.
-        res.header('x-api-key', token);
-        return res.status(200).send({ status: true, message: `User logged in successfully.` });
+        res.header('x-api-key');
+        return res.status(200).send({ status: true, message: `User logged in successfully.`, data: token });
     } catch (err) {
         return res.status(500).send({ status: false, message: "Something went wrong", Error: err.message })
     }

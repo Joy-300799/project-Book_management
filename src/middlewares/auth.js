@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken")
+const secretKey = 'Joy_Bhattacharya-Project4_Book_management'
 
 const userAuth = function(req, res, next) {
     try {
@@ -8,7 +9,7 @@ const userAuth = function(req, res, next) {
             return res.status(403).send({ status: false, message: `Missing authentication token in request` })
         }
 
-        const decoded = jwt.decode(token, 'group7'); //decoding authentication token
+        const decoded = jwt.decode(token, secretKey); //decoding authentication token
         if (!decoded) {
             return res.status(400).send({ status: false, message: "Invalid authentication token in request headers." })
         }

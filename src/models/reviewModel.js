@@ -24,4 +24,4 @@ const reviewSchema = new mongoose.Schema({
     },
     deletedAt: { type: Date }
 }, { timestamps: true })
-module.exports = mongoose.model('Reviews_collection', reviewSchema)
+module.exports = mongoose.model('Project4_reviews', reviewSchema)

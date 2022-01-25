@@ -3,7 +3,7 @@ const validator = require('../validators/validator')
 const bookModel = require('../models/bookModel')
 
 //Adding review for a specific book.
-const addReview = async function(req, res) {
+const addReview = async function (req, res) {
     try {
         const params = req.params.bookId //accessing bookId from params.
         requestReviewBody = req.body
@@ -52,11 +52,9 @@ const addReview = async function(req, res) {
         requestReviewBody.bookId = searchBook._id;
         requestReviewBody.reviewedAt = new Date();
 
-        let count = 0; //Increasing the review count in book documents w.r.t reviews.
         const saveReview = await reviewModel.create(requestReviewBody)
-        count = searchBook.reviews + 1;
         if (saveReview) {
-            await bookModel.findOneAndUpdate({ _id: params }, { reviews: count })
+            await bookModel.findOneAndUpdate({ _id: params }, { $inc: { reviews: 1 } })
         }
         const response = await reviewModel.findOne({ _id: saveReview._id }).select({
             __v: 0,
@@ -66,12 +64,12 @@ const addReview = async function(req, res) {
         })
         return res.status(201).send({ status: true, message: `Review added successfully for ${searchBook.title}`, data: response })
     } catch (err) {
-        return res.status(500).send({ status: false, message: "Something went wrong", Error: err.message })
+        return res.status(500).send({ status: false, Error: err.message })
     }
 }
 
 //Updating an existing review.
-const updateReview = async function(req, res) {
+const updateReview = async function (req, res) {
     try {
         const bookParams = req.params.bookId;
         const reviewParams = req.params.reviewId
@@ -101,20 +99,20 @@ const updateReview = async function(req, res) {
         }
 
         //finding book and review on which we have to update.
-        const searchBook = await bookModel.findById({ _id: bookParams })
+        const searchBook = await bookModel.findById({ _id: bookParams }).select({ createdAt: 0, updatedAt: 0, __v: 0 })
         if (!searchBook) {
-            return res.status(404).send({ status: false, message: `Book does not exist by this ${bookParams }. ` })
+            return res.status(404).send({ status: false, message: `Book does not exist by this ${bookParams}. ` })
         }
         const searchReview = await reviewModel.findById({ _id: reviewParams })
         if (!searchReview) {
             return res.status(404).send({
                 status: false,
-                message: `Review does not exist by this ${reviewParams }.`
+                message: `Review does not exist by this ${reviewParams}.`
             })
         }
 
         //checking whether the rating is number or character.
-        if (typeof(rating) === 'number') {
+        if (typeof (rating) === 'number') {
             if (req.body.rating === 0) {
                 return res.status(400).send({ status: false, message: "Rating cannot be 0. Please provide rating between 1 to 5." })
             }
@@ -131,7 +129,11 @@ const updateReview = async function(req, res) {
             if (searchReview.isDeleted == false) {
                 const updateReviewDetails = await reviewModel.findOneAndUpdate({ _id: reviewParams }, { review: review, rating: rating, reviewedBy: reviewedBy }, { new: true })
 
-                return res.status(200).send({ status: true, message: "Successfully updated the review of the book.", data: updateReviewDetails })
+                let destructureForResponse = searchBook.toObject();
+                destructureForResponse['updatedReview'] = updateReviewDetails;
+
+                return res.status(200).send({ status: true, message: "Successfully updated the review of the book.", data: destructureForResponse })
+
             } else {
                 return res.status(400).send({ status: false, message: "Unable to update details.Review has been already deleted" })
             }
@@ -139,12 +141,12 @@ const updateReview = async function(req, res) {
             return res.status(400).send({ status: false, message: "Unable to update details.Book has been already deleted" })
         }
     } catch (err) {
-        return res.status(500).send({ status: false, message: "Something went wrong", Error: err.message })
+        return res.status(500).send({ status: false, Error: err.message })
     }
 }
 
 //Deleting an existing review.
-const deleteReview = async function(req, res) {
+const deleteReview = async function (req, res) {
     try {
         const bookParams = req.params.bookId;
         const reviewParams = req.params.reviewId
@@ -161,13 +163,13 @@ const deleteReview = async function(req, res) {
         //finding book and checking whether it is deleted or not.
         const searchBook = await bookModel.findById({ _id: bookParams, isDeleted: false })
         if (!searchBook) {
-            return res.status(400).send({ status: false, message: `Book does not exist by this ${bookParams }.` })
+            return res.status(400).send({ status: false, message: `Book does not exist by this ${bookParams}.` })
         }
 
         //finding review and checking whether it is deleted or not.
         const searchReview = await reviewModel.findById({ _id: reviewParams })
         if (!searchReview) {
-            return res.status(400).send({ status: false, message: `Review does not exist by this ${reviewParams }.` })
+            return res.status(400).send({ status: false, message: `Review does not exist by this ${reviewParams}.` })
         }
 
         //verifying the attribute isDeleted:false or not for both books and reviews documents.
@@ -175,12 +177,10 @@ const deleteReview = async function(req, res) {
             if (searchReview.isDeleted == false) {
                 const deleteReviewDetails = await reviewModel.findOneAndUpdate({ _id: reviewParams }, { isDeleted: true, deletedAt: new Date() }, { new: true })
 
-                let count = searchBook.reviews
-                count = count - 1;
                 if (deleteReviewDetails) {
-                    await bookModel.findOneAndUpdate({ _id: bookParams }, { reviews: count })
+                    await bookModel.findOneAndUpdate({ _id: bookParams },{$inc:{ reviews: -1 }})
                 }
-                return res.status(200).send({ status: true, message: "Review deleted successfully.", data: deleteReviewDetails })
+                return res.status(200).send({ status: true, message: "Review deleted successfully."})
 
             } else {
                 return res.status(400).send({ status: false, message: "Unable to delete review details.Review has been already deleted" })
@@ -189,7 +189,7 @@ const deleteReview = async function(req, res) {
             return res.status(400).send({ status: false, message: "Unable to delete .Book has been already deleted" })
         }
     } catch (err) {
-        return res.status(500).send({ status: false, message: "Something went wrong", Error: err.message })
+        return res.status(500).send({ status: false, Error: err.message })
     }
 }
 

@@ -4,7 +4,7 @@ const router = express.Router();
 //Imported controllers files and models files with middlewares.
 const userController = require("../controllers/userController")
 const bookController = require("../controllers/bookController")
-const reviewController = require("../controllers/reviewController")
+const reviewController =  require("../controllers/reviewController")
 const middleware = require("../middlewares/auth")
 
 //User APIs --> To Register & login.
